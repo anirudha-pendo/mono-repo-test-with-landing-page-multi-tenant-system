@@ -99,10 +99,13 @@ function ProfileSettingsForm({ settings }: { settings: SettingsResponse }) {
   async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const name = String(formData.get("name") ?? "");
+    const image = String(formData.get("image") ?? "");
 
-    await updateSettings.mutateAsync({
-      name: String(formData.get("name") ?? ""),
-      image: String(formData.get("image") ?? ""),
+    await updateSettings.mutateAsync({ name, image });
+    (window as any).pendo?.track("profile_settings_updated", {
+      nameChanged: name !== settings.user.name,
+      imageChanged: image !== (settings.user.image ?? ""),
     });
     toast.success("Profile updated");
   }
@@ -165,9 +168,11 @@ function OrganizationSettingsForm({ settings }: { settings: SettingsResponse }) 
   ) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const organizationName = String(formData.get("organizationName") ?? "");
 
-    await updateSettings.mutateAsync({
-      organizationName: String(formData.get("organizationName") ?? ""),
+    await updateSettings.mutateAsync({ organizationName });
+    (window as any).pendo?.track("organization_settings_updated", {
+      organizationName,
     });
     toast.success("Organization updated");
   }

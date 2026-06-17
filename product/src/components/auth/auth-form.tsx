@@ -54,6 +54,17 @@ export function AuthForm({ mode }: AuthFormProps) {
       return;
     }
 
+    if (isSignup) {
+      (window as any).pendo?.track("user_signed_up", {
+        name,
+        email,
+      });
+    } else {
+      (window as any).pendo?.track("user_signed_in", {
+        email,
+      });
+    }
+
     router.push("/notes");
     router.refresh();
   }

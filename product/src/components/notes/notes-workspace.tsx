@@ -10,7 +10,7 @@ import {
   SaveIcon,
   Search01Icon,
 } from "@hugeicons/core-free-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { TiptapEditor } from "@/components/notes/tiptap-editor";
@@ -87,11 +87,33 @@ export function NotesWorkspace() {
     [activeId, notes]
   );
 
+  // Debounced tracking of note search usage
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    const query = search.trim();
+    if (!query) return;
+
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      (window as any).pendo?.track("notes_searched", {
+        searchQuery: query,
+        resultsCount: filteredNotes.length,
+        totalNotes: notes.length,
+      });
+    }, 500);
+
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [search, filteredNotes.length, notes.length]);
+
   async function handleCreateNote() {
     const result = await createNote.mutateAsync({
       title: "Untitled note",
       content: emptyContent,
       text: "",
+    });
+    (window as any).pendo?.track("note_created", {
+      noteId: result.note.id,
+      defaultTitle: "Untitled note",
     });
     setActiveId(result.note.id);
     toast.success("Note created");
@@ -99,6 +121,10 @@ export function NotesWorkspace() {
 
   async function handleDeleteNote(note: Note) {
     await deleteNote.mutateAsync(note.id);
+    (window as any).pendo?.track("note_deleted", {
+      noteId: note.id,
+      noteTitle: note.title,
+    });
     const nextNote = notes.find((item) => item.id !== note.id);
     setActiveId(nextNote?.id ?? null);
     toast.success("Note deleted");
@@ -280,6 +306,12 @@ function NoteEditorPanel({
       title,
       content,
       text,
+    });
+    (window as any).pendo?.track("note_saved", {
+      noteId: note.id,
+      titleLength: title.length,
+      contentLength: JSON.stringify(content).length,
+      hasBodyText: Boolean(text),
     });
     setIsDirty(false);
   }
