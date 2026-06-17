@@ -54,6 +54,16 @@ export function AuthForm({ mode }: AuthFormProps) {
       return;
     }
 
+    if (result.data?.user) {
+      pendo.identify({
+        visitor: {
+          id: result.data.user.id,
+          email: result.data.user.email,
+          full_name: result.data.user.name,
+        },
+      });
+    }
+
     router.push("/notes");
     router.refresh();
   }
